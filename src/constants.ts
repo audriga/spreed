@@ -47,7 +47,7 @@ export const SESSION = {
 
 export const CHAT = {
 	FETCH_LIMIT: 100,
-	MINIMUM_VISIBLE: 20,
+	MINIMUM_VISIBLE: 5,
 	FETCH_OLD: 0,
 	FETCH_NEW: 1,
 } as const
@@ -372,12 +372,14 @@ export const PARTICIPANT = {
 export const SHARED_ITEM = {
 	OBJECT_TYPE: {
 		DECK_CARD: 'deck-card',
+		JSON_LD_CARD: 'json-ld-card',
 		LOCATION: 'geo-location',
 		POLL: 'talk-poll',
 	},
 	TYPES: {
 		AUDIO: 'audio',
 		DECK_CARD: 'deckcard',
+		JSON_LD_CARD: 'jsonldcard',
 		FILE: 'file',
 		LOCATION: 'location',
 		MEDIA: 'media',

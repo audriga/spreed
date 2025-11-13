@@ -60,6 +60,7 @@ import DeckCard from '../../MessagesList/MessagesGroup/Message/MessagePart/DeckC
 import FilePreview from '../../MessagesList/MessagesGroup/Message/MessagePart/FilePreview.vue'
 import PollCard from '../../MessagesList/MessagesGroup/Message/MessagePart/PollCard.vue'
 import PinnedMessageItem from '../PinnedMessages/PinnedMessageItem.vue'
+import JsonLdCard from '../../MessagesList/MessagesGroup/Message/MessagePart/JsonLdCard.vue'
 import { SHARED_ITEM } from '../../../constants.ts'
 
 const LocationCard = defineAsyncComponent(() => import('../../MessagesList/MessagesGroup/Message/MessagePart/LocationCard.vue'))

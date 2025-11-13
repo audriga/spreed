@@ -12,6 +12,7 @@ import DeckCard from './MessagePart/DeckCard.vue'
 import DefaultParameter from './MessagePart/DefaultParameter.vue'
 import MentionChip from './MessagePart/MentionChip.vue'
 import PollCard from './MessagePart/PollCard.vue'
+import JsonLdCard from './MessagePart/JsonLdCard.vue'
 import { MENTION, SHARED_ITEM } from '../../../../constants.ts'
 import { isFilePreviewParameter } from '../../../../utils/message.ts'
 
@@ -50,6 +51,9 @@ function getRichParameter(message: ChatMessage, key: string, parameter: MessageP
 	}
 	if (parameter.type === SHARED_ITEM.OBJECT_TYPE.DECK_CARD) {
 		return { component: DeckCard, props: parameter }
+	}
+	if (parameter.type === SHARED_ITEM.OBJECT_TYPE.JSON_LD_CARD) {
+		return { component: JsonLdCard, props: parameter }
 	}
 	if (parameter.type === SHARED_ITEM.OBJECT_TYPE.LOCATION) {
 		return { component: LocationCard, props: parameter }
