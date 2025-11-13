@@ -61,6 +61,7 @@ import FilePreview from '../../MessagesList/MessagesGroup/Message/MessagePart/Fi
 import LocationCard from '../../MessagesList/MessagesGroup/Message/MessagePart/LocationCard.vue'
 import PollCard from '../../MessagesList/MessagesGroup/Message/MessagePart/PollCard.vue'
 import PinnedMessageItem from '../PinnedMessages/PinnedMessageItem.vue'
+import JsonLdCard from '../../MessagesList/MessagesGroup/Message/MessagePart/JsonLdCard.vue'
 import { SHARED_ITEM } from '../../../constants.ts'
 
 export default {

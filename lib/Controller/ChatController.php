@@ -1902,6 +1902,7 @@ class ChatController extends AEnvironmentAwareOCSController {
 			Attachment::TYPE_POLL,
 			Attachment::TYPE_RECORDING,
 			Attachment::TYPE_VOICE,
+			Attachment::TYPE_JSON_LD_CARD,
 		];
 
 		if ($this->participant->getAttendee()->getActorType() === Attendee::ACTOR_FEDERATED_USERS) {

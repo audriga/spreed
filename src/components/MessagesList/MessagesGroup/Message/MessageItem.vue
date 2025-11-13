@@ -108,6 +108,7 @@ import LocationCard from './MessagePart/LocationCard.vue'
 import MentionChip from './MessagePart/MentionChip.vue'
 import MessageBody from './MessagePart/MessageBody.vue'
 import PollCard from './MessagePart/PollCard.vue'
+import JsonLdCard from './MessagePart/JsonLdCard.vue'
 import ReactionsWrapper from './MessagePart/ReactionsWrapper.vue'
 import { useGetThreadId } from '../../../../composables/useGetThreadId.ts'
 import { CONVERSATION, MENTION, MESSAGE, PARTICIPANT } from '../../../../constants.ts'
@@ -248,6 +249,11 @@ export default {
 				} else if (type === 'deck-card') {
 					richParameters[p] = {
 						component: DeckCard,
+						props: this.message.messageParameters[p],
+					}
+				} else if (type === 'json-ld-card') {
+					richParameters[p] = {
+						component: JsonLdCard,
 						props: this.message.messageParameters[p],
 					}
 				} else if (type === 'geo-location') {

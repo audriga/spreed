@@ -322,6 +322,7 @@ export const SHARED_ITEM = {
 	TYPES: {
 		AUDIO: 'audio',
 		DECK_CARD: 'deckcard',
+		JSON_LD_CARD: 'jsonldcard',
 		FILE: 'file',
 		LOCATION: 'location',
 		MEDIA: 'media',
