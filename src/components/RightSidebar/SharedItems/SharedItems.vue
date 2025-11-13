@@ -56,6 +56,7 @@ import DeckCard from '../../MessagesList/MessagesGroup/Message/MessagePart/DeckC
 import FilePreview from '../../MessagesList/MessagesGroup/Message/MessagePart/FilePreview.vue'
 import LocationCard from '../../MessagesList/MessagesGroup/Message/MessagePart/LocationCard.vue'
 import PollCard from '../../MessagesList/MessagesGroup/Message/MessagePart/PollCard.vue'
+import JsonLdCard from '../../MessagesList/MessagesGroup/Message/MessagePart/JsonLdCard.vue'
 import { SHARED_ITEM } from '../../../constants.ts'
 
 export default {

@@ -16,6 +16,8 @@ export function getItemTypeFromMessage(message: ChatMessage): string {
 			return SHARED_ITEM.TYPES.LOCATION
 		} else if (message.messageParameters.object.type === 'deck-card') {
 			return SHARED_ITEM.TYPES.DECK_CARD
+		} else if (message.messageParameters.object.type === 'json-ld-card') {
+			return SHARED_ITEM.TYPES.JSON_LD_CARD
 		} else if (message.messageParameters.object.type === 'talk-poll') {
 			return SHARED_ITEM.TYPES.POLL
 		} else {
