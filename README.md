@@ -2,7 +2,7 @@
   - SPDX-FileCopyrightText: 2016 Nextcloud GmbH and Nextcloud contributors
   - SPDX-License-Identifier: CC0-1.0
 -->
-# Nextcloud Talk
+# Nextcloud Talk Json-Ld Rich Object Extension
 
 [![REUSE status](https://api.reuse.software/badge/github.com/nextcloud/spreed)](https://api.reuse.software/info/github.com/nextcloud/spreed)
 
