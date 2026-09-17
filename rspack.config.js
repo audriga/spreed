@@ -54,6 +54,7 @@ module.exports = defineConfig((env) => {
 			maps: path.join(__dirname, 'src', 'maps.js'),
 			search: path.join(__dirname, 'src', 'search.js'),
 			reference: path.join(__dirname, 'src', 'integrations', 'reference', 'reference.ts'),
+			'sml-widget': path.join(__dirname, 'src', 'widget-reference.js'),
 			icons: path.join(__dirname, 'src', 'icons.css'),
 		},
 
@@ -127,6 +128,9 @@ module.exports = defineConfig((env) => {
 					loader: 'vue-loader',
 					options: {
 						experimentalInlineMatchResource: true,
+						compilerOptions: {
+							isCustomElement: (tag) => tag.endsWith('-renderer'),
+						},
 					},
 				},
 				{

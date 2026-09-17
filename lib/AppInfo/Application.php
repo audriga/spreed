@@ -27,6 +27,7 @@ use OCA\Talk\Chat\Parser\SystemMessage;
 use OCA\Talk\Chat\Parser\UserMention;
 use OCA\Talk\Chat\SystemMessage\Listener as SystemMessageListener;
 use OCA\Talk\Collaboration\Collaborators\Listener as CollaboratorsListener;
+use OCA\Talk\Collaboration\Reference\SmlReferenceProvider;
 use OCA\Talk\Collaboration\Reference\ReferenceInvalidationListener;
 use OCA\Talk\Collaboration\Reference\RenderReferenceListener;
 use OCA\Talk\Collaboration\Reference\TalkReferenceProvider;
@@ -89,6 +90,7 @@ use OCA\Talk\Flow\RegisterOperationsListener;
 use OCA\Talk\Listener\AddMissingIndicesListener;
 use OCA\Talk\Listener\BeforeUserLoggedOutListener;
 use OCA\Talk\Listener\BotListener;
+use OCA\Talk\Listener\ReferenceWidgetListener;
 use OCA\Talk\Listener\CalDavEventListener;
 use OCA\Talk\Listener\CircleDeletedListener;
 use OCA\Talk\Listener\CircleEditedListener;
@@ -397,6 +399,9 @@ class Application extends App implements IBootstrap {
 		$context->registerProfileLinkAction(TalkCallAction::class);
 
 		$context->registerReferenceProvider(TalkReferenceProvider::class);
+		
+		$context->registerReferenceProvider(SmlReferenceProvider::class);
+		$context->registerEventListener(RenderReferenceEvent::class, ReferenceWidgetListener::class);
 
 		$context->registerTalkBackend(TalkBackend::class);
 
