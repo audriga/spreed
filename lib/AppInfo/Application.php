@@ -26,6 +26,7 @@ use OCA\Talk\Chat\Parser\SystemMessage;
 use OCA\Talk\Chat\Parser\UserMention;
 use OCA\Talk\Chat\SystemMessage\Listener as SystemMessageListener;
 use OCA\Talk\Collaboration\Collaborators\Listener as CollaboratorsListener;
+use OCA\Talk\Collaboration\Reference\SmlReferenceProvider;
 use OCA\Talk\Collaboration\Reference\ReferenceInvalidationListener;
 use OCA\Talk\Collaboration\Reference\TalkReferenceProvider;
 use OCA\Talk\Collaboration\Resources\ConversationProvider;
@@ -88,6 +89,7 @@ use OCA\Talk\Flow\RegisterOperationsListener;
 use OCA\Talk\Listener\AddMissingIndicesListener;
 use OCA\Talk\Listener\BeforeUserLoggedOutListener;
 use OCA\Talk\Listener\BotListener;
+use OCA\Talk\Listener\ReferenceWidgetListener;
 use OCA\Talk\Listener\CalDavEventListener;
 use OCA\Talk\Listener\CircleDeletedListener;
 use OCA\Talk\Listener\CircleEditedListener;
@@ -141,6 +143,7 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\Calendar\Events\CalendarObjectCreatedEvent;
 use OCP\Calendar\Events\CalendarObjectUpdatedEvent;
 use OCP\Collaboration\AutoComplete\AutoCompleteFilterEvent;
+use OCP\Collaboration\Reference\RenderReferenceEvent;
 use OCP\Collaboration\Resources\IProviderManager;
 use OCP\Collaboration\Resources\LoadAdditionalScriptsEvent;
 use OCP\Config\BeforePreferenceSetEvent;
@@ -380,6 +383,9 @@ class Application extends App implements IBootstrap {
 		$context->registerProfileLinkAction(TalkCallAction::class);
 
 		$context->registerReferenceProvider(TalkReferenceProvider::class);
+		
+		$context->registerReferenceProvider(SmlReferenceProvider::class);
+		$context->registerEventListener(RenderReferenceEvent::class, ReferenceWidgetListener::class);
 
 		$context->registerTalkBackend(TalkBackend::class);
 
