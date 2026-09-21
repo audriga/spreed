@@ -1,8 +1,5 @@
 <template>
 	<div class="no-localhost-reference-widget">
-		<div class="debug-info">
-			✓ Custom Widget Loaded ({{ richObject.title }})
-		</div>
 		<!-- <poll-editor ref="rendererEl" :data="jsonldData" :current-user="sampleCurrentUser" /> -->
         <type-renderer ref="rendererEl" :data="jsonldData"
         :current-user="sampleCurrentUser"
@@ -10,12 +7,15 @@
 
 
 		<div class="action-bar">
-			<NcActions :force-name="true" :inline="1">
+			<NcActions :force-name="true" :inline="2">
 				<NcActionButton :aria-label="'Share by mail'" @click.prevent="onShareByMail">
 					<template #icon>
 						<EmailIcon :size="20" />
 					</template>
 					Share by mail
+				</NcActionButton>
+				<NcActionButton v-if="isRecipe" :aria-label="'Add recipe to cookbook'" @click.prevent="onAddToCookbook">
+					Add recipe to cookbook
 				</NcActionButton>
 			</NcActions>
 		</div>
@@ -26,9 +26,10 @@
 
 
 import 'json-ld-web-components'
+import { getRequestToken } from '@nextcloud/auth'
+import { generateUrl } from '@nextcloud/router'
 import { NcActionButton, NcActions } from '@nextcloud/vue'
 import EmailIcon from 'vue-material-design-icons/Email.vue'
-
 
 export default {
 	name: 'JsonLdCardReference',
@@ -58,6 +59,38 @@ export default {
 			return this.richObject.jsonld || '{}'
 		},
 
+		jsonldObject() {
+			// richObject.jsonld might already be an object (not a JSON string),
+			// depending on how the backend serialized the rich object parameters.
+			if (typeof this.jsonldData === 'object' && this.jsonldData !== null) {
+				console.debug('[JsonLdCardReference] jsonldData is already an object, using as-is:', this.jsonldData)
+				return this.jsonldData
+			}
+
+			try {
+				const parsed = JSON.parse(this.jsonldData)
+				console.debug('[JsonLdCardReference] jsonldObject parsed successfully:', parsed)
+				return parsed
+			} catch (e) {
+				console.error('[JsonLdCardReference] Failed to parse jsonldData as JSON:', e, this.jsonldData)
+				return {}
+			}
+		},
+
+		isRecipe() {
+			console.log("isRecipe")
+			console.log('this.jsonldObject')
+			console.log(this.jsonldObject)
+			console.log('this.jsonldData')
+			console.log(this.jsonldData)
+			const type = this.jsonldObject['@type']
+			console.debug('[JsonLdCardReference] isRecipe check, @type:', type, 'jsonldObject:', this.jsonldObject)
+			if (Array.isArray(type)) {
+				return type.includes('Recipe')
+			}
+			return type === 'Recipe'
+		},
+
 		sampleCurrentUser() {
 			return 'simplemail@mailssimple.com'
 		},
@@ -74,8 +107,12 @@ export default {
 
 		// The mail app's compose endpoint was patched to accept json64
 		composeUrl() {
-			return '/index.php/apps/mail/compose?uri=mailto&json64='
+			return `${generateUrl('apps/mail/compose')}?uri=mailto&json64=`
 				+ encodeURIComponent(this.jsonldBase64)
+		},
+
+		cookbookUrl() {
+			return generateUrl('apps/cookbook/api/v1/recipes')
 		},
 	},
 	mounted() {
@@ -93,7 +130,30 @@ export default {
 	},
 	methods: {
 		onShareByMail() {
-			window.open(this.composeUrl, '_blank', 'noopener,noreferrer')
+			console.log(this.composeUrl)
+			window.location.href = this.composeUrl
+		},
+
+		async onAddToCookbook() {
+			try {
+				const response = await fetch(this.cookbookUrl, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-Requested-With': 'XMLHttpRequest',
+						requesttoken: getRequestToken(),
+					},
+					body: JSON.stringify(this.jsonldObject),
+				})
+
+				if (!response.ok) {
+					throw new Error(`Cookbook API responded with status ${response.status}`)
+				}
+
+				console.debug('[JsonLdCardReference] Recipe added to cookbook successfully')
+			} catch (error) {
+				console.error('[JsonLdCardReference] Failed to add recipe to cookbook:', error)
+			}
 		},
 	},
 }
