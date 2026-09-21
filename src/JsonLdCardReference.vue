@@ -78,11 +78,6 @@ export default {
 		},
 
 		isRecipe() {
-			console.log("isRecipe")
-			console.log('this.jsonldObject')
-			console.log(this.jsonldObject)
-			console.log('this.jsonldData')
-			console.log(this.jsonldData)
 			const type = this.jsonldObject['@type']
 			console.debug('[JsonLdCardReference] isRecipe check, @type:', type, 'jsonldObject:', this.jsonldObject)
 			if (Array.isArray(type)) {
@@ -116,14 +111,8 @@ export default {
 		},
 	},
 	mounted() {
-		console.debug('[JsonLdCardReference] MOUNTED!')
-		console.debug('[JsonLdCardReference] richObject:', this.richObject)
-		console.debug('[JsonLdCardReference] accessible:', this.accessible)
-		console.debug('[JsonLdCardReference] richObjectType:', this.richObjectType)
 
 		// renderer-error is the standardized, host-facing error CustomEvent
-		// every JsonLdElement-based renderer dispatches (bubbles + composed),
-		// regardless of whether the failure was a fetch/parse/JWT error in
 		this.$refs.rendererEl.addEventListener('renderer-error', (e) => {
 			console.error('[JsonLdCardReference] renderer-error:', e.detail.message, e.detail.error)
 		})
