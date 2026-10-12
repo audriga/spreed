@@ -37,3 +37,6 @@
 
 # JetBrains Fleet settings
 /.fleet
+
+# Agent skills
+/.agents
