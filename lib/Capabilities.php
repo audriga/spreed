@@ -68,6 +68,7 @@ class Capabilities implements IPublicCapability {
 		'raise-hand',
 		'room-description',
 		'rich-object-sharing',
+		'json-ld-card',
 		'temp-user-avatar-api',
 		'geo-location-sharing',
 		'voice-message-sharing',
