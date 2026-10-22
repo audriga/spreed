@@ -230,3 +230,20 @@ A reference implementation exercising all combinations and validation states is 
 3. **Authenticated session required**: `talk-share.js` is only injected for logged-in user sessions, not for public or unauthenticated guest shares.
 4. **Patched server requirement for rich JSON-LD**: Interactive card rendering depends on the server defining `json-ld-card` in `Definitions.php` and Talk containing `JsonLdCard.vue`. On unpatched servers, JSON-LD sharing cleanly returns an unsupported error.
 5. **Localization context**: Default dialog titles and toasts use Talk's translation catalog (`t('spreed', ...)`). Override the dialog title via `options.title` if custom app wording is desired.
+
+---
+
+## 5. Production Considerations & Future Refinements
+
+Before promoting this implementation to production across high-traffic environments, consider these edge-case refinements:
+
+1. **Top-Level `sessionStorage` Shielding**:
+   In `src/share.js`, moving the `try / catch` to wrap the redirect staging block (`JSON.stringify` and `sessionStorage.setItem`) will protect against browser `QuotaExceededError` or strict private browsing storage restrictions.
+2. **Re-entrancy Guard in `handleSendTo`**:
+   In `App.vue`, adding an `isHandlingSendTo` boolean flag prevents potential concurrent invocations between Vue Router's `afterEach` hook and component `mounted()` lifecycle during initial page boots.
+3. **JSON-LD `@graph` Unwrapping**:
+   In `src/share.js`, extending the root unwrap logic to check `jsonObj?.['@graph']?.[0]` ensures titles and descriptions are automatically parsed from multi-entity Schema.org graph documents.
+4. **File Share ID Semantics**:
+   For `messageType: 'file'`, `res.messageId` returns Nextcloud's file share record ID (since Talk generates the chat comment asynchronously via background events), rather than the comment ID.
+5. **Settings Page DOM Fallback**:
+   In Talk's upstream `requestRoomSelection.js`, providing `document.getElementById('body-user') || document.body` ensures dialog mounting succeeds on Nextcloud Settings pages (which use `#body-settings`).
