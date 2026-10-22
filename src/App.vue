@@ -66,6 +66,8 @@ import { useTokenStore } from './stores/token.ts'
 import { checkBrowser } from './utils/browserCheck.ts'
 import { hasExternalCallService } from './utils/conversation.ts'
 import { signalingKill } from './utils/webrtc/index.js'
+import { postPayloadToRoom } from './share.js'
+import { requestRoomSelection } from './utils/requestRoomSelection.js'
 
 /** Internal handlers for 'joined-conversation' watcher (voice-, breakout- rooms) */
 let unwatchJoinedConversation = undefined
@@ -368,6 +370,10 @@ export default {
 			 * carries the from and to objects as payload
 			 */
 			EventBus.emit('route-change', { from, to })
+
+			if (to.name === 'sendto') {
+				this.handleSendTo()
+			}
 		})
 
 		/**
@@ -416,10 +422,66 @@ export default {
 		if (!IS_DESKTOP) {
 			checkBrowser()
 		}
+		if (this.$route.name === 'sendto') {
+			this.handleSendTo()
+		}
 	},
 
 	methods: {
 		t,
+
+		async handleSendTo() {
+			const itemId = this.$route.query.itemid
+			let token = this.$route.query.token || this.$route.params.token
+
+			if (!itemId) {
+				console.warn('[TalkSendTo] No itemid parameter provided')
+				this.$router.replace({ name: 'root' })
+				return
+			}
+
+			const storageKey = 'talk_sendto_' + itemId
+			const rawPayload = sessionStorage.getItem(storageKey)
+			sessionStorage.removeItem(storageKey)
+
+			if (!rawPayload) {
+				console.error('[TalkSendTo] No staged payload found in sessionStorage for itemid:', itemId)
+				showError(t('spreed', 'The shared item has expired or was already sent.'))
+				this.$router.replace({ name: 'root' })
+				return
+			}
+
+			let payload
+			try {
+				payload = JSON.parse(rawPayload)
+			} catch (e) {
+				console.error('[TalkSendTo] Failed to parse staged payload:', e)
+				showError(t('spreed', 'Failed to process shared content.'))
+				this.$router.replace({ name: 'root' })
+				return
+			}
+
+			if (!token) {
+				const conversation = await requestRoomSelection('talk-sendto-room-select', {
+					dialogTitle: t('spreed', 'Share to conversation'),
+					showPostableOnly: true,
+				})
+				if (!conversation) {
+					// User canceled room selection
+					this.$router.replace({ name: 'root' })
+					return
+				}
+				token = conversation.token
+			}
+
+			try {
+				await postPayloadToRoom(token, payload.messageType, payload.messagePayload)
+				this.$router.replace({ name: 'conversation', params: { token } })
+			} catch (err) {
+				console.error('[TalkSendTo] Failed to post message:', err)
+				this.$router.replace({ name: 'conversation', params: { token } })
+			}
+		},
 
 		refreshCurrentConversation() {
 			this.fetchSingleConversation(this.token)

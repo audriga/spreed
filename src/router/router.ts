@@ -49,6 +49,12 @@ export function createTalkRouter() {
 			props: true,
 		},
 		{
+			path: '/apps/spreed/sendto/:token?',
+			name: 'sendto',
+			component: WelcomeView,
+			props: true,
+		},
+		{
 			path: '/apps/spreed/not-found',
 			name: 'notfound',
 			component: NotFoundView,
