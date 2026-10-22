@@ -123,6 +123,22 @@ class PageController extends Controller {
 		return $this->pageHandler();
 	}
 
+	#[NoCSRFRequired]
+	#[PublicPage]
+	#[UseSession]
+	#[FrontpageRoute(verb: 'GET', url: '/sendto/{token}', requirements: ['token' => '[a-z0-9]{4,30}'])]
+	public function sendToToken(string $token): Response {
+		return $this->pageHandler($token);
+	}
+
+	#[NoCSRFRequired]
+	#[PublicPage]
+	#[UseSession]
+	#[FrontpageRoute(verb: 'GET', url: '/sendto')]
+	public function sendTo(): Response {
+		return $this->pageHandler();
+	}
+
 	/**
 	 * @param string $token
 	 * @param string $callUser

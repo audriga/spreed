@@ -22,6 +22,7 @@ use OCP\IConfig;
 use OCP\IUser;
 use OCP\IUserSession;
 use OCP\Share\IManager;
+use OCP\RichObjectStrings\Definitions;
 use OCP\TaskProcessing\IManager as ITaskProcessingManager;
 use OCP\TaskProcessing\TaskTypes\TextToTextSummary;
 use OCP\TaskProcessing\TaskTypes\TextToTextTranslate;
@@ -68,7 +69,6 @@ class Capabilities implements IPublicCapability {
 		'raise-hand',
 		'room-description',
 		'rich-object-sharing',
-		'json-ld-card',
 		'temp-user-avatar-api',
 		'geo-location-sharing',
 		'voice-message-sharing',
@@ -263,8 +263,13 @@ class Capabilities implements IPublicCapability {
 			return [];
 		}
 
+		$features = self::FEATURES;
+		if ($this->isJsonLdSupported()) {
+			$features[] = 'json-ld-card';
+		}
+
 		$capabilities = [
-			'features' => self::FEATURES,
+			'features' => $features,
 			'features-local' => self::LOCAL_FEATURES,
 			'config' => [
 				'attachments' => [
@@ -438,6 +443,11 @@ class Capabilities implements IPublicCapability {
 		return [
 			'spreed' => $capabilities,
 		];
+	}
+
+	protected function isJsonLdSupported(): bool {
+		return class_exists(Definitions::class)
+			&& isset((new Definitions())->definitions['json-ld-card']);
 	}
 
 	protected function isLiveTranscriptionSupported(): bool {
