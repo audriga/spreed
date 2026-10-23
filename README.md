@@ -109,22 +109,12 @@ curl -X POST -u admin:admin -H "OCS-APIRequest: true" \
 ### JSON-LD Message Rendering
 JSON-LD messages are rendered inline in the chat using **LDWC** (`<type-renderer>`). This provides interactive, rich visualization for Schema.org entities (such as Recipes, Events, Persons, and interactive Schema.org Actions).
 
-### Universal Talk Sharing API
-Provides a standardized client-side entry point for any Nextcloud app (Deck, Mail, Notes, Calendar, or third-party apps) to share text, files, and rich JSON-LD data into Talk conversations without app-specific backend coupling.
+### Talk "SendTo" Pattern (JSON-LD)
+A standardized pattern allowing any Nextcloud app to share Schema.org JSON-LD cards into Talk conversations via direct POST or `sessionStorage` + GET redirection at `/apps/spreed/sendto`.
 
-* Supports both **in-place** sharing (with a conversation picker dialog) and **redirect** mode (`sendto`).
-* Full specification and developer guide: [Universal Talk Sharing Documentation](docs/talk-share.md).
-
-#### Quick start (JavaScript)
-```js
-// Share a Schema.org object directly from any app's frontend
-await window.OCA.Talk.share('json-ld', {
-    '@context': 'https://schema.org',
-    '@type': 'Recipe',
-    name: 'Pancake Recipe',
-    description: 'Fluffy homemade pancakes',
-})
-```
+* **Direct POST**: `POST /apps/spreed/sendto` with `{ token, jsonld }`.
+* **Redirect**: Stage `{ jsonld }` in `sessionStorage.setItem(itemId, ...)` and navigate to `/apps/spreed/sendto[/{token}]?itemid={itemId}`.
+* Full documentation and examples: [SendTo JSON-LD Documentation](docs/sendto-jsonld.md).
 
 ---
 

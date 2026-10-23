@@ -55,7 +55,6 @@ module.exports = defineConfig((env) => {
 			search: path.join(__dirname, 'src', 'search.js'),
 			reference: path.join(__dirname, 'src', 'integrations', 'reference', 'reference.ts'),
 			'sml-widget': path.join(__dirname, 'src', 'widget-reference.js'),
-			share: path.join(__dirname, 'src', 'share.js'),
 			icons: path.join(__dirname, 'src', 'icons.css'),
 		},
 

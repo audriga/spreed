@@ -9,6 +9,7 @@ declare(strict_types=1);
 namespace OCA\Talk\Controller;
 
 use OCA\Talk\AppInfo\Application;
+use OCA\Talk\Chat\ChatManager;
 use OCA\Talk\Config;
 use OCA\Talk\Exceptions\ParticipantNotFoundException;
 use OCA\Talk\Exceptions\RoomNotFoundException;
@@ -16,6 +17,7 @@ use OCA\Talk\Manager;
 use OCA\Talk\Model\Attendee;
 use OCA\Talk\Participant;
 use OCA\Talk\Room;
+use OCA\Talk\Service\AvatarService;
 use OCA\Talk\Service\ParticipantService;
 use OCA\Talk\Service\RoomService;
 use OCA\Talk\TalkSession;
@@ -30,14 +32,17 @@ use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\Attribute\UseSession;
 use OCP\AppFramework\Http\ContentSecurityPolicy;
 use OCP\AppFramework\Http\FeaturePolicy;
+use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\NotFoundResponse;
 use OCP\AppFramework\Http\RedirectResponse;
 use OCP\AppFramework\Http\Response;
 use OCP\AppFramework\Http\Template\PublicTemplateResponse;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Services\IInitialState;
+use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Collaboration\Reference\RenderReferenceEvent;
 use OCP\Collaboration\Resources\LoadAdditionalScriptsEvent;
+use OCP\Comments\MessageTooLongException;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\HintException;
 use OCP\IGroupManager;
@@ -46,6 +51,8 @@ use OCP\IURLGenerator;
 use OCP\IUser;
 use OCP\IUserSession;
 use OCP\Notification\IManager as INotificationManager;
+use OCP\RichObjectStrings\InvalidObjectExeption;
+use OCP\RichObjectStrings\IValidator;
 use OCP\Security\Bruteforce\IThrottler;
 use Psr\Log\LoggerInterface;
 use SensitiveParameter;
@@ -70,6 +77,10 @@ class PageController extends Controller {
 		private readonly Config $talkConfig,
 		private readonly IGroupManager $groupManager,
 		private readonly ?string $userId,
+		private readonly ChatManager $chatManager,
+		private readonly AvatarService $avatarService,
+		private readonly ITimeFactory $timeFactory,
+		private readonly IValidator $richObjectValidator,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -127,7 +138,13 @@ class PageController extends Controller {
 	#[PublicPage]
 	#[UseSession]
 	#[FrontpageRoute(verb: 'GET', url: '/sendto/{token}', requirements: ['token' => '[a-z0-9]{4,30}'])]
-	public function sendToToken(string $token): Response {
+	public function sendToToken(string $token, ?string $itemid = null): Response {
+		if ($itemid !== null && $itemid !== '') {
+			$this->initialState->provideInitialState('sendto_item_id', $itemid);
+		}
+		if ($token !== '') {
+			$this->initialState->provideInitialState('sendto_token', $token);
+		}
 		return $this->pageHandler($token);
 	}
 
@@ -135,8 +152,101 @@ class PageController extends Controller {
 	#[PublicPage]
 	#[UseSession]
 	#[FrontpageRoute(verb: 'GET', url: '/sendto')]
-	public function sendTo(): Response {
-		return $this->pageHandler();
+	public function sendTo(?string $itemid = null, ?string $token = null): Response {
+		if ($itemid !== null && $itemid !== '') {
+			$this->initialState->provideInitialState('sendto_item_id', $itemid);
+		}
+		if ($token !== null && $token !== '') {
+			$this->initialState->provideInitialState('sendto_token', $token);
+		}
+		return $this->pageHandler($token ?? '');
+	}
+
+	#[NoCSRFRequired]
+	#[PublicPage]
+	#[UseSession]
+	#[FrontpageRoute(verb: 'POST', url: '/sendto')]
+	public function sendToPost(string $token = '', mixed $jsonld = null): JSONResponse {
+		if ($token === '') {
+			return new JSONResponse(['error' => 'token is required'], Http::STATUS_BAD_REQUEST);
+		}
+		if (empty($jsonld)) {
+			return new JSONResponse(['error' => 'jsonld is required'], Http::STATUS_BAD_REQUEST);
+		}
+
+		try {
+			$room = $this->manager->getRoomByToken($token, $this->userId);
+			$participant = $this->participantService->getParticipant($room, $this->userId);
+		} catch (RoomNotFoundException|ParticipantNotFoundException) {
+			return new JSONResponse(['error' => 'room not found or access denied'], Http::STATUS_NOT_FOUND);
+		}
+
+		if ($room->getReadOnly() === Room::READ_ONLY) {
+			return new JSONResponse(['error' => 'room is read-only'], Http::STATUS_FORBIDDEN);
+		}
+
+		$jsonString = is_string($jsonld) ? $jsonld : json_encode($jsonld);
+		$parsed = is_array($jsonld) ? $jsonld : json_decode($jsonString, true);
+
+		if (!is_array($parsed)) {
+			return new JSONResponse(['error' => 'invalid jsonld format'], Http::STATUS_BAD_REQUEST);
+		}
+
+		$cardTitle = $parsed['name'] ?? $parsed['headline'] ?? $parsed['@type'] ?? 'Shared Item';
+		$cardDesc = $parsed['description'] ?? '';
+		$cardId = (string)($parsed['id'] ?? (time() . '-' . bin2hex(random_bytes(4))));
+
+		$data = [
+			'type' => 'json-ld-card',
+			'id' => $cardId,
+			'name' => $cardTitle,
+			'description' => $cardDesc,
+			'jsonld' => $jsonString,
+			'icon-url' => $this->avatarService->getAvatarUrl($room),
+		];
+
+		try {
+			$this->richObjectValidator->validate('{object}', ['object' => $data]);
+		} catch (InvalidObjectExeption) {
+			return new JSONResponse(['error' => 'object validation failed'], Http::STATUS_BAD_REQUEST);
+		}
+
+		$this->participantService->ensureOneToOneRoomIsFilled($room);
+		$creationDateTime = $this->timeFactory->getDateTime('now', new \DateTimeZone('UTC'));
+
+		$message = json_encode([
+			'message' => 'object_shared',
+			'parameters' => [
+				'objectType' => 'json-ld-card',
+				'objectId' => $cardId,
+				'metaData' => $data,
+			],
+		]);
+
+		$user = $this->userSession->getUser();
+		$actorType = Attendee::ACTOR_USERS;
+		$actorId = $user ? $user->getUID() : ($this->userId ?? 'guest');
+
+		try {
+			$comment = $this->chatManager->addSystemMessage(
+				$room,
+				$participant,
+				$actorType,
+				$actorId,
+				$message,
+				$creationDateTime,
+				true
+			);
+		} catch (MessageTooLongException) {
+			return new JSONResponse(['error' => 'message too long'], Http::STATUS_REQUEST_ENTITY_TOO_LARGE);
+		} catch (\Exception) {
+			return new JSONResponse(['error' => 'message post failed'], Http::STATUS_BAD_REQUEST);
+		}
+
+		return new JSONResponse([
+			'id' => (int)$comment->getId(),
+			'token' => $token,
+		], Http::STATUS_CREATED);
 	}
 
 	/**
