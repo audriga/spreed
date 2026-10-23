@@ -57,6 +57,7 @@ import { useSessionIssueHandler } from './composables/useSessionIssueHandler.ts'
 import { CONVERSATION, PARTICIPANT } from './constants.ts'
 import BrowserStorage from './services/BrowserStorage.js'
 import { EventBus } from './services/EventBus.ts'
+import { loadState } from '@nextcloud/initial-state'
 import { leaveConversationSync } from './services/participantsService.js'
 import SessionStorage from './services/SessionStorage.js'
 import { useActorStore } from './stores/actor.ts'
@@ -66,7 +67,7 @@ import { useTokenStore } from './stores/token.ts'
 import { checkBrowser } from './utils/browserCheck.ts'
 import { hasExternalCallService } from './utils/conversation.ts'
 import { signalingKill } from './utils/webrtc/index.js'
-import { postPayloadToRoom } from './share.js'
+import { postRichObjectToConversation } from './services/messagesService.ts'
 import { requestRoomSelection } from './utils/requestRoomSelection.js'
 
 /** Internal handlers for 'joined-conversation' watcher (voice-, breakout- rooms) */
@@ -370,10 +371,6 @@ export default {
 			 * carries the from and to objects as payload
 			 */
 			EventBus.emit('route-change', { from, to })
-
-			if (to.name === 'sendto') {
-				this.handleSendTo()
-			}
 		})
 
 		/**
@@ -422,44 +419,36 @@ export default {
 		if (!IS_DESKTOP) {
 			checkBrowser()
 		}
-		if (this.$route.name === 'sendto') {
-			this.handleSendTo()
-		}
+		this.checkPendingShare()
 	},
 
 	methods: {
 		t,
 
-		async handleSendTo() {
-			const itemId = this.$route.query.itemid
-			let token = this.$route.query.token || this.$route.params.token
+		async checkPendingShare() {
+			const sendtoItemId = loadState('spreed', 'sendto_item_id', null) || this.$route.query?.itemid
+			const sendtoToken = loadState('spreed', 'sendto_token', null) || this.$route.query?.token || this.$route.params?.token
 
-			if (!itemId) {
-				console.warn('[TalkSendTo] No itemid parameter provided')
-				this.$router.replace({ name: 'root' })
+			if (!sendtoItemId) {
 				return
 			}
 
-			const storageKey = 'talk_sendto_' + itemId
-			const rawPayload = sessionStorage.getItem(storageKey)
-			sessionStorage.removeItem(storageKey)
-
+			const rawPayload = sessionStorage.getItem(sendtoItemId)
 			if (!rawPayload) {
-				console.error('[TalkSendTo] No staged payload found in sessionStorage for itemid:', itemId)
-				showError(t('spreed', 'The shared item has expired or was already sent.'))
-				this.$router.replace({ name: 'root' })
 				return
 			}
+			sessionStorage.removeItem(sendtoItemId)
 
 			let payload
 			try {
 				payload = JSON.parse(rawPayload)
 			} catch (e) {
 				console.error('[TalkSendTo] Failed to parse staged payload:', e)
-				showError(t('spreed', 'Failed to process shared content.'))
-				this.$router.replace({ name: 'root' })
 				return
 			}
+
+			const match = window.location.pathname.match(/\/call\/([a-z0-9]{4,30})/i)
+			let token = sendtoToken || (match ? match[1] : (this.token || this.$route.params?.token))
 
 			if (!token) {
 				const conversation = await requestRoomSelection('talk-sendto-room-select', {
@@ -467,19 +456,43 @@ export default {
 					showPostableOnly: true,
 				})
 				if (!conversation) {
-					// User canceled room selection
-					this.$router.replace({ name: 'root' })
 					return
 				}
 				token = conversation.token
 			}
 
 			try {
-				await postPayloadToRoom(token, payload.messageType, payload.messagePayload)
-				this.$router.replace({ name: 'conversation', params: { token } })
+				const jsonldData = payload.jsonld !== undefined ? payload.jsonld : (payload.payload !== undefined ? payload.payload : payload)
+				let jsonObj = jsonldData
+				if (typeof jsonldData === 'string') {
+					jsonObj = JSON.parse(jsonldData)
+				}
+				const root = Array.isArray(jsonObj) ? jsonObj[0] : jsonObj
+				const name = root?.name || root?.headline || root?.['@type'] || 'JSON-LD Data'
+				const description = root?.description || root?.articleBody || ''
+				const jsonld = typeof jsonldData === 'string' ? jsonldData : JSON.stringify(jsonldData)
+				const cardId = Date.now().toString(36) + Math.random().toString(36).substring(2, 7)
+
+				const metaData = JSON.stringify({
+					id: cardId,
+					name,
+					description,
+					jsonld,
+				})
+
+				await postRichObjectToConversation(token, {
+					objectType: 'json-ld-card',
+					objectId: cardId,
+					metaData,
+				})
+
+				if (this.$route.name !== 'conversation' || this.$route.params?.token !== token) {
+					this.$router.replace({ name: 'conversation', params: { token } })
+				} else {
+					this.refreshCurrentConversation()
+				}
 			} catch (err) {
 				console.error('[TalkSendTo] Failed to post message:', err)
-				this.$router.replace({ name: 'conversation', params: { token } })
 			}
 		},
 
