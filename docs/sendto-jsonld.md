@@ -58,19 +58,19 @@ On application mount, Talk's root component executes `checkPendingShare()`:
 
 Before offering JSON-LD sharing into Talk, consuming apps should verify capability:
 
-```ts
+```js
 import { getCapabilities } from '@nextcloud/capabilities'
 
 // 1. Verify Talk is installed and enabled for the current user
-export function isTalkAvailable(): boolean {
+export function isTalkAvailable() {
     const caps = getCapabilities()
     return Boolean(caps?.spreed)
 }
 
 // 2. Verify Talk supports interactive JSON-LD rich cards
-export function isJsonLdSupported(): boolean {
+export function isJsonLdSupported() {
     const caps = getCapabilities()
-    const features = (caps?.spreed as { features?: string[] })?.features || []
+    const features = caps?.spreed?.features || []
     return features.includes('json-ld-card')
 }
 ```
@@ -81,7 +81,7 @@ export function isJsonLdSupported(): boolean {
 
 Post directly into a known conversation without navigating away:
 
-```ts
+```js
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
@@ -143,7 +143,7 @@ Content-Type: application/json
 Stage the payload in browser `sessionStorage` and redirect into Talk:
 
 #### A. Redirecting directly to a known conversation:
-```ts
+```js
 import { generateUrl } from '@nextcloud/router'
 
 const itemId = Date.now().toString(36)
@@ -159,7 +159,7 @@ window.location.href = generateUrl(`/apps/spreed/sendto/${token}?itemid=${itemId
 ```
 
 #### B. Redirecting without a conversation (prompts user with Talk's room selector):
-```ts
+```js
 import { generateUrl } from '@nextcloud/router'
 
 const itemId = Date.now().toString(36)
