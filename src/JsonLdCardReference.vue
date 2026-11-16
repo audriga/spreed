@@ -119,9 +119,15 @@ export default {
 	},
 	methods: {
 		onShareByMail() {
-			console.log(this.composeUrl)
-			window.location.href = this.composeUrl
-		},
+        const itemId = Date.now().toString(36);
+        // 1. Stage in sessionStorage (using unprefixed itemId directly as the key)
+        sessionStorage.setItem(itemId, JSON.stringify({
+            jsonld: this.jsonldObject,
+        }));
+        // 2. Redirect to Talk picker
+        window.location.href = generateUrl(`/apps/mail/mailto?itemid=${itemId}`);
+
+        },
 
 		async onAddToCookbook() {
 			try {
@@ -171,5 +177,3 @@ export default {
 	padding-top: 10px;
 }
 </style>
-
-

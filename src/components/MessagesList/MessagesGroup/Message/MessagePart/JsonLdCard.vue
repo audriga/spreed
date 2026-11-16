@@ -76,22 +76,6 @@ export default {
             return 'simplemail@mailssimple.com'
         },
 
-        jsonldBase64() {
-            // btoa() only handles latin1, so UTF-8 encode the payload first
-            const bytes = new TextEncoder().encode(this.jsonld)
-            let binary = ''
-            for (const byte of bytes) {
-                binary += String.fromCharCode(byte)
-            }
-            return btoa(binary)
-        },
-
-        // The mail app's compose endpoint was patched to accept json64
-        composeUrl() {
-            return `${generateUrl('apps/mail/compose')}?uri=mailto&json64=`
-                + encodeURIComponent(this.jsonldBase64)
-        },
-
         cookbookUrl() {
             return generateUrl('apps/cookbook/api/v1/recipes')
         },
@@ -107,7 +91,15 @@ export default {
     },
     methods: {
         onShareByMail() {
-            window.location.href = this.composeUrl
+			
+        const itemId = Date.now().toString(36);
+        // 1. Stage in sessionStorage (using unprefixed itemId directly as the key)
+        sessionStorage.setItem(itemId, JSON.stringify({
+            jsonld: this.jsonldObject,
+        }));
+        // 2. Redirect to Talk picker
+        window.location.href = generateUrl(`/apps/mail/mailto?itemid=${itemId}`);
+
         },
 
         async onAddToCookbook() {
