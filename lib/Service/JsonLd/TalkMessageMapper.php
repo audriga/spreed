@@ -130,6 +130,7 @@ class TalkMessageMapper {
 		$message = [
 			'@context' => self::CONTEXT,
 			'@type' => 'Message',
+			'encodingFormat' => 'text/markdown',
 			'id' => (string)$data['id'],
 			'description' => $this->description($data),
 			'sender' => $data['sender'],

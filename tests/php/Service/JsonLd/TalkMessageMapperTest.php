@@ -89,6 +89,7 @@ class TalkMessageMapperTest extends TestCase {
 		$this->assertSame([
 			'@context' => 'https://schema.org/',
 			'@type' => 'Message',
+			'encodingFormat' => 'text/markdown',
 			'id' => '1042',
 			'description' => 'Hey everyone, the deployment is planned for 3pm today.',
 			'sender' => $this->alice(),
