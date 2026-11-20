@@ -165,8 +165,6 @@ class CommentsManager extends Manager {
 		$query = $this->dbConn->getQueryBuilder();
 		$query->select('*')
 			->from('comments')
-			->where($query->expr()->eq('object_type', $query->createNamedParameter($objectType)))
-			->andWhere($query->expr()->eq('object_id', $query->createNamedParameter($objectId)))
 			->orderBy('creation_timestamp', $sortDirection === 'desc' ? 'DESC' : 'ASC')
 			->addOrderBy('id', $sortDirection === 'desc' ? 'DESC' : 'ASC');
 
@@ -174,16 +172,7 @@ class CommentsManager extends Manager {
 			$query->setMaxResults($limit);
 		}
 
-		if (!empty($verbs)) {
-			$query->andWhere($query->expr()->in('verb', $query->createNamedParameter($verbs, IQueryBuilder::PARAM_STR_ARRAY)));
-		}
-
-		if ($topmostParentId !== '') {
-			$query->andWhere($query->expr()->orX(
-				$query->expr()->eq('id', $query->createNamedParameter($topmostParentId)),
-				$query->expr()->eq('topmost_parent_id', $query->createNamedParameter($topmostParentId)),
-			));
-		}
+		$this->applyCollectionFilter($query, $objectType, $objectId, $verbs, $topmostParentId);
 
 		$lastKnownComment = $lastKnownCommentId > 0 ? $this->getLastKnownComment(
 			$objectType,
@@ -266,6 +255,43 @@ class CommentsManager extends Manager {
 		$resultStatement->closeCursor();
 
 		return $comments;
+	}
+
+	/**
+	 * Counts the comments that getCommentsWithVerbForObjectSinceComment() returns for the same filters, without a cursor
+	 *
+	 * @param string[] $verbs
+	 */
+	public function countCommentsWithVerbForObject(string $objectType, string $objectId, array $verbs, string $topmostParentId = ''): int {
+		$query = $this->dbConn->getQueryBuilder();
+		$query->select($query->func()->count('id', 'total'))
+			->from('comments');
+		$this->applyCollectionFilter($query, $objectType, $objectId, $verbs, $topmostParentId);
+
+		$resultStatement = $query->executeQuery();
+		$total = (int)$resultStatement->fetchOne();
+		$resultStatement->closeCursor();
+
+		return $total;
+	}
+
+	/**
+	 * @param string[] $verbs
+	 */
+	private function applyCollectionFilter(IQueryBuilder $query, string $objectType, string $objectId, array $verbs, string $topmostParentId): void {
+		$query->andWhere($query->expr()->eq('object_type', $query->createNamedParameter($objectType)))
+			->andWhere($query->expr()->eq('object_id', $query->createNamedParameter($objectId)));
+
+		if (!empty($verbs)) {
+			$query->andWhere($query->expr()->in('verb', $query->createNamedParameter($verbs, IQueryBuilder::PARAM_STR_ARRAY)));
+		}
+
+		if ($topmostParentId !== '') {
+			$query->andWhere($query->expr()->orX(
+				$query->expr()->eq('id', $query->createNamedParameter($topmostParentId)),
+				$query->expr()->eq('topmost_parent_id', $query->createNamedParameter($topmostParentId)),
+			));
+		}
 	}
 
 	/**
