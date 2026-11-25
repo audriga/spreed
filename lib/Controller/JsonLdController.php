@@ -19,6 +19,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\FrontpageRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
+use OCP\AppFramework\Http\Attribute\CORS;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\Comments\NotFoundException;
@@ -42,6 +43,7 @@ class JsonLdController extends Controller {
 	#[PublicPage]
 	#[NoAdminRequired]
 	#[NoCSRFRequired]
+	#[CORS]
 	#[FrontpageRoute(verb: 'GET', url: '/lda/message/{id}', requirements: ['id' => '\d+'])]
 	public function message(int $id): JSONResponse {
 		return $this->execute(
@@ -54,6 +56,7 @@ class JsonLdController extends Controller {
 	#[PublicPage]
 	#[NoAdminRequired]
 	#[NoCSRFRequired]
+	#[CORS]
 	#[FrontpageRoute(verb: 'GET', url: '/lda/thread/{id}', requirements: ['id' => '\d+'])]
 	public function thread(int $id, string $lastId = '0', string $direction = JsonLdTalkService::DIRECTION_PREVIOUS, string $count = '100'): JSONResponse {
 		return $this->execute(
@@ -66,6 +69,7 @@ class JsonLdController extends Controller {
 	#[PublicPage]
 	#[NoAdminRequired]
 	#[NoCSRFRequired]
+	#[CORS]
 	#[FrontpageRoute(verb: 'GET', url: '/lda/room/{token}', requirements: ['token' => '[a-z0-9]{4,30}'])]
 	public function room(string $token, string $lastId = '0', string $direction = JsonLdTalkService::DIRECTION_PREVIOUS, string $count = '100'): JSONResponse {
 		return $this->execute(
@@ -77,6 +81,7 @@ class JsonLdController extends Controller {
 
 	#[PublicPage]
 	#[NoAdminRequired]
+	#[CORS]
 	#[FrontpageRoute(verb: 'POST', url: '/lda/thread/{id}', requirements: ['id' => '\d+'])]
 	public function commentThread(int $id): JSONResponse {
 		return $this->execute(
@@ -88,6 +93,7 @@ class JsonLdController extends Controller {
 
 	#[PublicPage]
 	#[NoAdminRequired]
+	#[CORS]
 	#[FrontpageRoute(verb: 'POST', url: '/lda/room/{token}', requirements: ['token' => '[a-z0-9]{4,30}'])]
 	public function commentRoom(string $token): JSONResponse {
 		return $this->execute(
