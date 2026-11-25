@@ -16,10 +16,10 @@ use OCA\Talk\Service\JsonLd\JsonLdErrorMapper;
 use OCA\Talk\Service\JsonLd\JsonLdTalkService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\CORS;
 use OCP\AppFramework\Http\Attribute\FrontpageRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
-use OCP\AppFramework\Http\Attribute\CORS;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\Comments\NotFoundException;
@@ -28,6 +28,8 @@ use OCP\IURLGenerator;
 use Psr\Log\LoggerInterface;
 
 class JsonLdController extends Controller {
+	private const DEFAULT_PAGE_COUNT = '100';
+	
 	public function __construct(
 		string $appName,
 		IRequest $request,
@@ -58,7 +60,7 @@ class JsonLdController extends Controller {
 	#[NoCSRFRequired]
 	#[CORS]
 	#[FrontpageRoute(verb: 'GET', url: '/lda/thread/{id}', requirements: ['id' => '\d+'])]
-	public function thread(int $id, string $lastId = '0', string $direction = JsonLdTalkService::DIRECTION_PREVIOUS, string $count = '100'): JSONResponse {
+	public function thread(int $id, string $lastId = '0', string $direction = JsonLdTalkService::DIRECTION_PREVIOUS, string $count = JsonLdController::DEFAULT_PAGE_COUNT): JSONResponse {
 		return $this->execute(
 			$this->urlGenerator->linkToRouteAbsolute('spreed.jsonld.thread', ['id' => $id]),
 			Http::STATUS_OK,
@@ -71,7 +73,7 @@ class JsonLdController extends Controller {
 	#[NoCSRFRequired]
 	#[CORS]
 	#[FrontpageRoute(verb: 'GET', url: '/lda/room/{token}', requirements: ['token' => '[a-z0-9]{4,30}'])]
-	public function room(string $token, string $lastId = '0', string $direction = JsonLdTalkService::DIRECTION_PREVIOUS, string $count = '100'): JSONResponse {
+	public function room(string $token, string $lastId = '0', string $direction = JsonLdTalkService::DIRECTION_PREVIOUS, string $count = JsonLdController::DEFAULT_PAGE_COUNT): JSONResponse {
 		return $this->execute(
 			$this->urlGenerator->linkToRouteAbsolute('spreed.jsonld.room', ['token' => $token]),
 			Http::STATUS_OK,
